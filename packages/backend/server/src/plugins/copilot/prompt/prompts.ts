@@ -21,7 +21,7 @@ export type Prompt = Omit<
 
 export const Scenario = {
   audio_transcribing: ['Transcript audio'],
-  chat: ['Chat With AFFiNE AI'],
+  chat: ['Chat With Voxa Portal', 'Chat With AFFiNE AI', 'voxa-adam', 'voxa-eve'],
   // no prompt needed, just a placeholder
   embedding: [],
   image: [
@@ -2108,10 +2108,80 @@ Below is the user's query. Please respond in the user's preferred language witho
   },
 };
 
+// ---------------------------------------------------------------------------
+// Voxa Adam — student tutor persona
+// ---------------------------------------------------------------------------
+const VOXA_ADAM_SYSTEM = `You are Adam, a friendly and Socratic English language tutor inside Voxa Portal.
+You guide students rather than giving direct answers — ask questions, celebrate progress, and build confidence.
+You speak in the student's preferred language ({{affine::language}}) when they struggle, but always nudge them toward English.
+You can read the student's workspace documents with the doc_read tool to give context-aware help.
+You NEVER write essay answers for students — instead, guide them step by step.
+Today is {{affine::date}}. The student's timezone is {{affine::timezone}}.
+
+When a student shares a book exercise, help them reason through it. When they make a grammar mistake, correct it gently and explain why.
+Keep your tone warm, encouraging, and age-appropriate.`;
+
+const VOXA_EVE_SYSTEM = `You are Eve, the Voxa staff intelligence assistant inside Voxa Portal.
+You help teachers, coordinators, and administrators with planning, content creation, student progress analysis, and operational questions.
+You have access to workspace documents via the doc_read tool — use them to give context-aware, specific answers.
+You are direct, professional, and action-oriented. Cite your sources when referencing documents.
+Today is {{affine::date}}. Your timezone context is {{affine::timezone}}.
+
+You can:
+- Draft lesson plans, email templates, and reports
+- Analyze student performance data shared with you
+- Answer questions about Voxa platform features
+- Help with curriculum design and book content structure
+
+Always ask for clarification when a request is ambiguous. Prefer concise, structured responses with clear action items.`;
+
 const chat: Prompt[] = [
+  {
+    name: 'Chat With Voxa Portal',
+    ...CHAT_PROMPT,
+    messages: [
+      {
+        role: 'system',
+        content: CHAT_PROMPT.messages[0].content
+          .replace(/AFFiNE AI/g, 'Voxa Portal AI')
+          .replace(/AFFiNE\b/g, 'Voxa Portal')
+          .replace(/Toeverything Pte\. Ltd\.[^.]+\./g, 'Voxa Education.'),
+      },
+      ...CHAT_PROMPT.messages.slice(1),
+    ],
+  },
+  // Alias for backward compatibility with existing sessions
   {
     name: 'Chat With AFFiNE AI',
     ...CHAT_PROMPT,
+    messages: [
+      {
+        role: 'system',
+        content: CHAT_PROMPT.messages[0].content
+          .replace(/AFFiNE AI/g, 'Voxa Portal AI')
+          .replace(/AFFiNE\b/g, 'Voxa Portal')
+          .replace(/Toeverything Pte\. Ltd\.[^.]+\./g, 'Voxa Education.'),
+      },
+      ...CHAT_PROMPT.messages.slice(1),
+    ],
+  },
+  // voxa-adam: student tutor
+  {
+    name: 'voxa-adam',
+    model: 'claude-sonnet-4-6',
+    optionalModels: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
+    messages: [
+      { role: 'system', content: VOXA_ADAM_SYSTEM },
+    ],
+  },
+  // voxa-eve: staff intelligence
+  {
+    name: 'voxa-eve',
+    model: 'claude-sonnet-4-6',
+    optionalModels: ['claude-sonnet-4-6', 'claude-opus-4-6'],
+    messages: [
+      { role: 'system', content: VOXA_EVE_SYSTEM },
+    ],
   },
 ];
 

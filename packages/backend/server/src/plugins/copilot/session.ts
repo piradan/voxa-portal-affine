@@ -507,10 +507,35 @@ export class ChatSessionService {
 
   async create(options: ChatSessionOptions): Promise<string> {
     const sessionId = randomUUID();
-    const prompt = await this.prompt.get(options.promptName);
+
+    // Voxa workspace-type routing: map generic chat prompt → Adam (student) or Eve (staff)
+    let effectivePromptName = options.promptName;
+    if (
+      (options.promptName === 'Chat With Voxa Portal' ||
+        options.promptName === 'Chat With AFFiNE AI') &&
+      options.workspaceId
+    ) {
+      try {
+        const ws = await this.models.workspace.get(options.workspaceId);
+        const wsType = (ws as unknown as Record<string, string>)?.voxaWorkspaceType;
+        if (wsType === 'student') {
+          effectivePromptName = 'voxa-adam';
+        } else if (wsType === 'staff') {
+          effectivePromptName = 'voxa-eve';
+        }
+      } catch {
+        // non-fatal — keep original promptName
+      }
+    }
+
+    let prompt = await this.prompt.get(effectivePromptName);
+    if (!prompt && effectivePromptName !== options.promptName) {
+      // Voxa prompts not seeded yet — fall back to generic
+      prompt = await this.prompt.get(options.promptName);
+    }
     if (!prompt) {
-      this.logger.error(`Prompt not found: ${options.promptName}`);
-      throw new CopilotPromptNotFound({ name: options.promptName });
+      this.logger.error(`Prompt not found: ${effectivePromptName}`);
+      throw new CopilotPromptNotFound({ name: effectivePromptName });
     }
 
     if (options.pinned) {

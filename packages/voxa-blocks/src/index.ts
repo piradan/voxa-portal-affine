@@ -9,6 +9,10 @@
  *   - voxa-flashcards(Phase L) — SRS review widget
  *   - voxa-livekit   (Phase K) — LiveKit class session
  *
+ * AI blocks:
+ *   - voxa-adam      — Adam AI tutor iframe (students/parents/clients)
+ *   - voxa-eve       — Eve AI assistant iframe (staff/teachers only)
+ *
  * Staff blocks:
  *   - voxa-analytics (Phase M) — Student progress analytics
  *
@@ -28,3 +32,5 @@ export { VoxaLivekitWidget } from "./livekit/livekit-widget";
 export { VoxaGradesWidget } from "./grades/grades-widget";
 export { VoxaFlashcardsWidget } from "./flashcards/flashcards-widget";
 export { VoxaAnalyticsWidget } from "./analytics/analytics-widget";
+export { VoxaAdamWidget } from "./adam/adam-widget";
+export { VoxaEveWidget } from "./eve/eve-widget";
