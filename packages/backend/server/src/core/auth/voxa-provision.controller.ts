@@ -37,7 +37,6 @@ import {
 import type { Request, Response } from 'express';
 
 import { Models } from '../../models';
-import { WorkspaceBlobStorage } from '../storage';
 import { DocWriter } from '../doc/writer';
 import { Public } from './guard';
 
@@ -68,8 +67,7 @@ export class VoxaProvisionController {
 
   constructor(
     private readonly models: Models,
-    private readonly docWriter: DocWriter,
-    private readonly blobStorage: WorkspaceBlobStorage
+    private readonly docWriter: DocWriter
   ) {}
 
   private validateServiceToken(req: Request, res: Response): boolean {
@@ -136,14 +134,13 @@ export class VoxaProvisionController {
       ...(userRole ? { voxaUserRole: userRole } : {}),
     } as any, false);
 
-    // If a tenant logo URL was provided, download and set as workspace avatar
+    // If a tenant logo URL was provided, store it for later use
     if (tenantLogoUrl) {
       try {
-        const avatarKey = await this.downloadAndStoreAvatar(workspace.id, tenantLogoUrl);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await this.models.workspace.update(workspace.id, { avatarKey } as any, false);
+        await this.models.workspace.update(workspace.id, { voxaLogoUrl: tenantLogoUrl } as any, false);
       } catch (err) {
-        this.logger.warn(`Failed to set workspace avatar from logo URL: ${(err as Error).message}`);
+        this.logger.warn(`Failed to store logo URL: ${(err as Error).message}`);
       }
     }
 
@@ -232,23 +229,4 @@ export class VoxaProvisionController {
     }
   }
 
-  /**
-   * Downloads an image from a remote URL and stores it as a workspace blob.
-   * Returns the blob key (avatarKey) to set on the workspace.
-   */
-  private async downloadAndStoreAvatar(workspaceId: string, url: string): Promise<string> {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status} fetching logo`);
-
-    const contentType = res.headers.get('content-type') ?? 'image/png';
-    const buffer = Buffer.from(await res.arrayBuffer());
-
-    // Use a stable key derived from the URL so re-provisioning the same tenant
-    // doesn't create duplicate blobs.
-    const key = `avatar-${Buffer.from(url).toString('base64url').slice(0, 32)}`;
-    // Note: blobStorage.put() auto-detects content type from buffer magic bytes
-    void contentType; // detected from buffer
-    await this.blobStorage.put(workspaceId, key, buffer);
-    return key;
-  }
 }
