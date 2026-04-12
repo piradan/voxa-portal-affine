@@ -1,6 +1,7 @@
 import { useWorkspaceInfo } from '@affine/core/components/hooks/use-workspace-info';
 import { ServerService } from '@affine/core/modules/cloud';
 import type { SettingTab } from '@affine/core/modules/dialogs/constant';
+import { WorkspacePermissionService } from '@affine/core/modules/permissions';
 import { WorkspaceService } from '@affine/core/modules/workspace';
 import { EmbeddingSettings } from '@affine/core/modules/workspace-indexer-embedding';
 import { ServerDeploymentType } from '@affine/graphql';
@@ -10,12 +11,11 @@ import {
   CollaborationIcon,
   IntegrationsIcon,
   PaymentIcon,
-  PropertyIcon,
   SaveIcon,
   SettingsIcon,
 } from '@blocksuite/icons/rc';
 import { useLiveData, useService } from '@toeverything/infra';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import type { SettingSidebarItem, SettingState } from '../types';
 import { WorkspaceSettingBilling } from './billing';
@@ -23,7 +23,6 @@ import { IntegrationSetting } from './integration';
 import { WorkspaceSettingLicense } from './license';
 import { MembersPanel } from './members';
 import { WorkspaceSettingDetail } from './preference';
-import { WorkspaceSettingProperties } from './properties';
 import { WorkspaceSettingStorage } from './storage';
 
 export const WorkspaceSetting = ({
@@ -40,8 +39,6 @@ export const WorkspaceSetting = ({
   switch (activeTab) {
     case 'workspace:preference':
       return <WorkspaceSettingDetail onCloseSetting={onCloseSetting} />;
-    case 'workspace:properties':
-      return <WorkspaceSettingProperties />;
     case 'workspace:members':
       return (
         <MembersPanel
@@ -68,12 +65,21 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
   const workspaceService = useService(WorkspaceService);
   const information = useWorkspaceInfo(workspaceService.workspace);
   const serverService = useService(ServerService);
+  const workspacePermissionService = useService(WorkspacePermissionService);
 
   const isSelfhosted = useLiveData(
     serverService.server.config$.selector(
       c => c.type === ServerDeploymentType.Selfhosted
     )
   );
+
+  // Revalidate permissions so isOwner is populated
+  useEffect(() => {
+    workspacePermissionService.permission.revalidate();
+  }, [workspacePermissionService]);
+
+  // Only workspace owners (master admins) see admin-only tabs
+  const isOwner = useLiveData(workspacePermissionService.permission.isOwner$);
 
   const t = useI18n();
 
@@ -88,32 +94,27 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
         icon: <SettingsIcon />,
         testId: 'workspace-setting:preference',
       },
-      {
-        key: 'workspace:properties',
-        title: t['com.affine.settings.workspace.properties'](),
-        icon: <PropertyIcon />,
-        testId: 'workspace-setting:properties',
-      },
-      {
-        key: 'workspace:members',
+      // workspace:properties removed — admin-only in Voxa
+      isOwner && {
+        key: 'workspace:members' as SettingTab,
         title: t['Members'](),
         icon: <CollaborationIcon />,
         testId: 'workspace-setting:members',
       },
-      {
-        key: 'workspace:integrations',
+      isOwner && {
+        key: 'workspace:integrations' as SettingTab,
         title: t['com.affine.integration.integrations'](),
         icon: <IntegrationsIcon />,
         testId: 'workspace-setting:integrations',
       },
-      {
-        key: 'workspace:storage',
+      isOwner && {
+        key: 'workspace:storage' as SettingTab,
         title: t['Storage'](),
         icon: <SaveIcon />,
         testId: 'workspace-setting:storage',
       },
-      {
-        key: 'workspace:embedding',
+      isOwner && {
+        key: 'workspace:embedding' as SettingTab,
         title:
           t[
             'com.affine.settings.workspace.indexer-embedding.embedding.title'
@@ -134,7 +135,7 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
         testId: 'workspace-setting:license',
       },
     ].filter((item): item is SettingSidebarItem => !!item);
-  }, [showBilling, showLicense, t]);
+  }, [isOwner, showBilling, showLicense, t]);
 
   return items;
 };

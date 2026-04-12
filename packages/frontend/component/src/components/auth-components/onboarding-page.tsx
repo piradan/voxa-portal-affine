@@ -74,16 +74,16 @@ export const ScrollableLayout = ({
         <div className={styles.linkGroup}>
           <a
             className={styles.link}
-            href="https://affine.pro/terms"
+            href="https://voxa.education/terms"
             target="_blank"
             rel="noreferrer"
           >
-            Terms of Conditions
+            Terms of Service
           </a>
           <Divider orientation="vertical" />
           <a
             className={styles.link}
-            href="https://affine.pro/privacy"
+            href="https://voxa.education/privacy"
             target="_blank"
             rel="noreferrer"
           >

@@ -105,13 +105,8 @@ const useSyncEngineSyncProgress = (meta: WorkspaceMetadata) => {
   const syncing = engineState.syncing > 0 || engineState.syncRetrying;
 
   let content;
-  // TODO(@eyhn): add i18n
   if (workspace.flavour === 'local') {
-    if (!BUILD_CONFIG.isElectron) {
-      content = 'This is a local demo workspace.';
-    } else {
-      content = 'Saved locally';
-    }
+    content = 'Saved locally';
   } else if (!isOnline) {
     content = 'Disconnected, please check your network connection';
   } else if (engineState.syncRetrying && engineState.syncErrorMessage) {
@@ -120,10 +115,10 @@ const useSyncEngineSyncProgress = (meta: WorkspaceMetadata) => {
     content = 'Sync disconnected due to unexpected issues, reconnecting.';
   } else if (syncing) {
     content =
-      `Syncing with AFFiNE Cloud` +
+      `Syncing` +
       (progress ? ` (${Math.floor(progress * 100)}%)` : '');
   } else {
-    content = 'Synced with AFFiNE Cloud';
+    content = 'Synced';
   }
 
   const CloudWorkspaceSyncStatus = () => {
@@ -184,7 +179,6 @@ const WorkspaceSyncInfo = ({
   dense?: boolean;
 }) => {
   const syncStatus = useSyncEngineSyncProgress(workspaceMetadata);
-  const isCloud = workspaceMetadata.flavour !== 'local';
   const { paused, pause } = usePauseAnimation();
 
   // to make sure that animation will play first time
@@ -224,11 +218,7 @@ const WorkspaceSyncInfo = ({
           <div className={styles.workspaceName} data-testid="workspace-name">
             {workspaceProfile.name}
           </div>
-          {!dense ? (
-            <div className={styles.workspaceStatus}>
-              {isCloud ? <CloudWorkspaceStatus /> : <LocalWorkspaceStatus />}
-            </div>
-          ) : null}
+          {/* Voxa: storage type badge removed — all workspaces sync to cloud */}
         </div>
 
         {/* when syncing/offline/... */}

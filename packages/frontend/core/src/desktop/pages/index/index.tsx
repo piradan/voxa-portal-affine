@@ -74,8 +74,7 @@ export const Component = ({
   const createCloudWorkspace = useCallback(() => {
     if (createOnceRef.current) return;
     createOnceRef.current = true;
-    // TODO: support selfhosted
-    buildShowcaseWorkspace(workspacesService, 'affine-cloud', 'AFFiNE Cloud')
+    buildShowcaseWorkspace(workspacesService, 'affine-cloud', 'Voxa Workspace')
       .then(({ meta, defaultDocId }) => {
         if (defaultDocId) {
           jumpToPage(meta.id, defaultDocId);

@@ -2,7 +2,6 @@
 import '../blocksuite/block-suite-editor';
 
 import { DebugLogger } from '@affine/debug';
-import { DEFAULT_WORKSPACE_NAME } from '@affine/env/constant';
 import onboardingUrl from '@affine/templates/onboarding.zip';
 import { ZipTransformer } from '@blocksuite/affine/widgets/linked-doc';
 
@@ -72,11 +71,14 @@ export async function createFirstAppData(workspacesService: WorkspacesService) {
     return;
   }
   localStorage.setItem('is-first-open', 'false');
-  const { meta, defaultDocId } = await buildShowcaseWorkspace(
-    workspacesService,
-    'local',
-    DEFAULT_WORKSPACE_NAME
+  // Voxa: create a minimal cloud workspace instead of a showcase workspace
+  const meta = await workspacesService.create(
+    'affine-cloud',
+    async docCollection => {
+      docCollection.meta.initialize();
+      docCollection.doc.getMap('meta').set('name', 'Voxa Workspace');
+    }
   );
-  logger.info('create first workspace', defaultDocId);
-  return { meta, defaultPageId: defaultDocId };
+  logger.info('create first workspace', meta.id);
+  return { meta, defaultPageId: undefined };
 }

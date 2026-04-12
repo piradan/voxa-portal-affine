@@ -5,9 +5,7 @@ import { MeetingSettingsService } from '@affine/core/modules/media/services/meet
 import { useI18n } from '@affine/i18n';
 import {
   AppearanceIcon,
-  ExperimentIcon,
   FolderIcon,
-  InformationIcon,
   KeyboardIcon,
   MeetingIcon,
   NotificationIcon,
@@ -18,12 +16,10 @@ import { useEffect, useMemo } from 'react';
 
 import { AuthService, ServerService } from '../../../../modules/cloud';
 import type { SettingSidebarItem, SettingState } from '../types';
-import { AboutAffine } from './about';
 import { AppearanceSettings } from './appearance';
 import { BackupSettingPanel } from './backup';
 import { BillingSettings } from './billing';
 import { EditorSettings } from './editor';
-import { ExperimentalFeatures } from './experimental-features';
 import { PaymentIcon, UpgradeIcon } from './icons';
 import { MeetingsSettings } from './meetings';
 import { NotificationSettings } from './notifications';
@@ -134,20 +130,7 @@ export const useGeneralSettingList = (): GeneralSettingList => {
       });
     }
 
-    settings.push(
-      {
-        key: 'experimental-features',
-        title: t['com.affine.settings.workspace.experimental-features'](),
-        icon: <ExperimentIcon />,
-        testId: 'experimental-features-trigger',
-      },
-      {
-        key: 'about',
-        title: t['com.affine.aboutAFFiNE.title'](),
-        icon: <InformationIcon />,
-        testId: 'about-panel-trigger',
-      }
-    );
+    // Voxa: experimental-features and about tabs removed for production
     return settings;
   }, [
     t,
@@ -178,14 +161,10 @@ export const GeneralSetting = ({
       return <AppearanceSettings />;
     case 'meetings':
       return <MeetingsSettings />;
-    case 'about':
-      return <AboutAffine />;
     case 'plans':
       return <AFFiNEPricingPlans />;
     case 'billing':
       return <BillingSettings onChangeSettingState={onChangeSettingState} />;
-    case 'experimental-features':
-      return <ExperimentalFeatures />;
     case 'backup':
       return <BackupSettingPanel />;
     default:

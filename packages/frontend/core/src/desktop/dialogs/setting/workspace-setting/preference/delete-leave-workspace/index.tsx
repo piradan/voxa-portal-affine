@@ -48,6 +48,9 @@ export const DeleteLeaveWorkspace = ({
     globalContextService.globalContext.workspaceId.$
   );
 
+  // Voxa: prevent deleting the last (default) workspace
+  const isLastWorkspace = workspaceList.length <= 1;
+
   const isOwner = useLiveData(workspacePermissionService.permission.isOwner$);
   useEffect(() => {
     workspacePermissionService.permission.revalidate();
@@ -97,6 +100,11 @@ export const DeleteLeaveWorkspace = ({
     workspacesService,
     workspacePermissionService,
   ]);
+
+  // Voxa: do not render the delete/leave row for the last (default) workspace
+  if (isLastWorkspace && isOwner) {
+    return null;
+  }
 
   return (
     <>

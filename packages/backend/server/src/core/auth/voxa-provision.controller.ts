@@ -125,7 +125,27 @@ export class VoxaProvisionController {
       `Provisioned ${type} workspace ${workspace.id} for entity ${voxaEntityId} (tenant ${voxaTenantId})`
     );
 
-    res.json({ workspaceId: workspace.id });
+    // For student workspaces, create a default "Class Notes" document
+    let classNotesDocId: string | undefined;
+    if (type === 'student') {
+      try {
+        const classNotes = await this.docWriter.createDoc(
+          workspace.id,
+          'Class Notes',
+          '# Class Notes\n\nUse this document to keep track of your lessons, exercises, and vocabulary.\n'
+        );
+        classNotesDocId = classNotes.docId;
+        this.logger.log(
+          `Created Class Notes doc ${classNotesDocId} in workspace ${workspace.id}`
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Failed to create Class Notes doc: ${(err as Error).message}`
+        );
+      }
+    }
+
+    res.json({ workspaceId: workspace.id, classNotesDocId });
   }
 
   @Public()
