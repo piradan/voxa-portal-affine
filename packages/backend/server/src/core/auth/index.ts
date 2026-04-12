@@ -8,6 +8,8 @@ import { QuotaModule } from '../quota';
 import { UserModule } from '../user';
 import { AuthController } from './controller';
 import { AuthGuard, AuthWebsocketOptionsProvider } from './guard';
+import { VoxaProvisionController } from './voxa-provision.controller';
+import { VoxaSsoController } from './voxa-sso.controller';
 import { AuthCronJob } from './job';
 import { AuthResolver } from './resolver';
 import { AuthService } from './service';
@@ -22,7 +24,7 @@ import { AuthService } from './service';
     AuthWebsocketOptionsProvider,
   ],
   exports: [AuthService, AuthGuard, AuthWebsocketOptionsProvider],
-  controllers: [AuthController],
+  controllers: [AuthController, VoxaSsoController, VoxaProvisionController],
 })
 export class AuthModule {}
 

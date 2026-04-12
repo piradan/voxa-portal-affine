@@ -139,6 +139,8 @@ model Workspace {
   avatarKey           String?  @map("avatar_key") @db.VarChar
   indexed             Boolean  @default(false)
   lastCheckEmbeddings DateTime @default("1970-01-01T00:00:00-00:00") @map("last_check_embeddings") @db.Timestamptz(3)
+  voxaTenantId        String?  @map("voxa_tenant_id") @db.VarChar
+  voxaWorkspaceType   String?  @map("voxa_workspace_type") @db.VarChar
 
   features                   WorkspaceFeature[]
   docs                       WorkspaceDoc[]
@@ -158,6 +160,7 @@ model Workspace {
 
   @@index([lastCheckEmbeddings])
   @@index([createdAt])
+  @@index([voxaTenantId])
   @@map("workspaces")
 }
 
