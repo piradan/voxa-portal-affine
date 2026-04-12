@@ -6,8 +6,15 @@
  * AFFINE_SERVICE_TOKEN bearer token (never exposed to browser clients).
  *
  * POST /api/voxa/provision
- * Body: { type: "tenant"|"student", voxaEntityId: string, voxaTenantId: string }
- * Response: { workspaceId: string }
+ * Body: {
+ *   type: "tenant"|"student",
+ *   voxaEntityId: string,
+ *   voxaTenantId: string,
+ *   userRole?: string,       // e.g. "student", "teacher", "tenant_admin"
+ *   tenantLogoUrl?: string,  // remote logo URL — downloaded and set as workspace avatar
+ *   tenantName?: string,     // tenant display name for workspace label
+ * }
+ * Response: { workspaceId: string, classNotesDocId?: string }
  *
  * POST /api/voxa/publish-book
  * Body: { workspaceId: string, title: string, markdown: string, voxaBookId: string }
@@ -30,6 +37,7 @@ import {
 import type { Request, Response } from 'express';
 
 import { Models } from '../../models';
+import { WorkspaceBlobStorage } from '../storage';
 import { DocWriter } from '../doc/writer';
 import { Public } from './guard';
 
@@ -37,6 +45,9 @@ interface ProvisionBody {
   type: 'tenant' | 'student';
   voxaEntityId: string;
   voxaTenantId: string;
+  userRole?: string;
+  tenantLogoUrl?: string;
+  tenantName?: string;
 }
 
 interface PublishBookBody {
@@ -57,7 +68,8 @@ export class VoxaProvisionController {
 
   constructor(
     private readonly models: Models,
-    private readonly docWriter: DocWriter
+    private readonly docWriter: DocWriter,
+    private readonly blobStorage: WorkspaceBlobStorage
   ) {}
 
   private validateServiceToken(req: Request, res: Response): boolean {
@@ -88,7 +100,7 @@ export class VoxaProvisionController {
   ) {
     if (!this.validateServiceToken(req, res)) return;
 
-    const { type, voxaEntityId, voxaTenantId } = body ?? {};
+    const { type, voxaEntityId, voxaTenantId, userRole, tenantLogoUrl, tenantName } = body ?? {};
 
     if (!type || !voxaEntityId || !voxaTenantId) {
       res.status(400).json({ error: 'missing_fields' });
@@ -111,15 +123,29 @@ export class VoxaProvisionController {
     // Tag it with Voxa metadata via direct DB update.
     // Cast to any because UpdateWorkspaceInput doesn't include the new
     // voxa columns yet — Prisma accepts them after the migration.
+    const workspaceName =
+      type === 'tenant'
+        ? (tenantName ? `${tenantName} Workspace` : `Tenant ${voxaTenantId}`)
+        : `Student ${voxaEntityId}`;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await this.models.workspace.update(workspace.id, {
-      name:
-        type === 'tenant'
-          ? `Tenant ${voxaTenantId}`
-          : `Student ${voxaEntityId}`,
+      name: workspaceName,
       voxaTenantId,
       voxaWorkspaceType: type === 'tenant' ? 'staff' : 'student',
+      ...(userRole ? { voxaUserRole: userRole } : {}),
     } as any, false);
+
+    // If a tenant logo URL was provided, download and set as workspace avatar
+    if (tenantLogoUrl) {
+      try {
+        const avatarKey = await this.downloadAndStoreAvatar(workspace.id, tenantLogoUrl);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await this.models.workspace.update(workspace.id, { avatarKey } as any, false);
+      } catch (err) {
+        this.logger.warn(`Failed to set workspace avatar from logo URL: ${(err as Error).message}`);
+      }
+    }
 
     this.logger.log(
       `Provisioned ${type} workspace ${workspace.id} for entity ${voxaEntityId} (tenant ${voxaTenantId})`
@@ -204,5 +230,25 @@ export class VoxaProvisionController {
       this.logger.error(`Failed to unpublish book: ${(err as Error).message}`);
       res.status(500).json({ error: 'unpublish_failed', detail: (err as Error).message });
     }
+  }
+
+  /**
+   * Downloads an image from a remote URL and stores it as a workspace blob.
+   * Returns the blob key (avatarKey) to set on the workspace.
+   */
+  private async downloadAndStoreAvatar(workspaceId: string, url: string): Promise<string> {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching logo`);
+
+    const contentType = res.headers.get('content-type') ?? 'image/png';
+    const buffer = Buffer.from(await res.arrayBuffer());
+
+    // Use a stable key derived from the URL so re-provisioning the same tenant
+    // doesn't create duplicate blobs.
+    const key = `avatar-${Buffer.from(url).toString('base64url').slice(0, 32)}`;
+    // Note: blobStorage.put() auto-detects content type from buffer magic bytes
+    void contentType; // detected from buffer
+    await this.blobStorage.put(workspaceId, key, buffer);
+    return key;
   }
 }
