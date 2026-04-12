@@ -2,6 +2,7 @@ import './config';
 
 import { Module } from '@nestjs/common';
 
+import { DocStorageModule } from '../doc';
 import { FeatureModule } from '../features';
 import { MailModule } from '../mail';
 import { QuotaModule } from '../quota';
@@ -15,7 +16,7 @@ import { AuthResolver } from './resolver';
 import { AuthService } from './service';
 
 @Module({
-  imports: [FeatureModule, UserModule, QuotaModule, MailModule],
+  imports: [DocStorageModule, FeatureModule, UserModule, QuotaModule, MailModule],
   providers: [
     AuthService,
     AuthResolver,

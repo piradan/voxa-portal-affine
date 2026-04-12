@@ -57,22 +57,19 @@ export class DocWriter {
     markdown: string,
     editorId?: string
   ): Promise<CreateDocResult> {
-    // Fetch workspace root doc first - reject if not found
-    // The root doc (docId = workspaceId) contains meta.pages array
+    // Fetch workspace root doc (docId = workspaceId contains meta.pages array).
+    // If it doesn't exist yet (freshly provisioned workspace), start with an
+    // empty buffer — addDocToRootDoc handles that case and creates a valid root.
     const rootDoc = await this.storage.getDoc(workspaceId, workspaceId);
-    if (!rootDoc?.bin) {
-      throw new NotFoundException(
-        `Workspace ${workspaceId} not found or has no root document`
-      );
-    }
-
-    const rootDocBin = Buffer.isBuffer(rootDoc.bin)
-      ? rootDoc.bin
-      : Buffer.from(
-          rootDoc.bin.buffer,
-          rootDoc.bin.byteOffset,
-          rootDoc.bin.byteLength
-        );
+    const rootDocBin = rootDoc?.bin
+      ? Buffer.isBuffer(rootDoc.bin)
+        ? rootDoc.bin
+        : Buffer.from(
+            rootDoc.bin.buffer,
+            rootDoc.bin.byteOffset,
+            rootDoc.bin.byteLength
+          )
+      : Buffer.alloc(0);
 
     const docId = nanoid();
 
@@ -288,6 +285,13 @@ export class DocWriter {
     );
 
     return { success: true };
+  }
+
+  /**
+   * Deletes a document from a workspace.
+   */
+  async deleteDoc(workspaceId: string, docId: string): Promise<void> {
+    await this.storage.deleteDoc(workspaceId, docId);
   }
 
   private emitDocUpdatesPushed(payload: {
