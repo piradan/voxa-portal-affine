@@ -72,15 +72,7 @@ export class ServerConfigResolver {
   })
   serverConfig(): ServerConfigType {
     return {
-      name:
-        this.config.server.name ??
-        (env.selfhosted
-          ? 'AFFiNE SelfHosted Cloud'
-          : env.namespaces.canary
-            ? 'AFFiNE Canary Cloud'
-            : env.namespaces.beta
-              ? 'AFFiNE Beta Cloud'
-              : 'AFFiNE Cloud'),
+      name: this.config.server.name ?? 'Voxa Portal',
       version: env.version,
       baseUrl: this.url.requestBaseUrl,
       type: env.DEPLOYMENT_TYPE,

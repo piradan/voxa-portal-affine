@@ -141,6 +141,8 @@ model Workspace {
   lastCheckEmbeddings DateTime @default("1970-01-01T00:00:00-00:00") @map("last_check_embeddings") @db.Timestamptz(3)
   voxaTenantId        String?  @map("voxa_tenant_id") @db.VarChar
   voxaWorkspaceType   String?  @map("voxa_workspace_type") @db.VarChar
+  voxaUserRole        String?  @map("voxa_user_role") @db.VarChar
+  voxaLogoUrl         String?  @map("voxa_logo_url") @db.VarChar
 
   features                   WorkspaceFeature[]
   docs                       WorkspaceDoc[]

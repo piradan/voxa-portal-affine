@@ -105,8 +105,8 @@ export class OIDCProvider extends OAuthProvider implements OnModuleDestroy {
     const generation = ++this.#validationGeneration;
     this.#retryScheduler.clear();
 
-    this.validateAndSync(generation).catch(() => {
-      /* noop */
+    this.validateAndSync(generation).catch((err: unknown) => {
+      this.logger.error('OIDC validateAndSync threw unexpectedly', err);
     });
   }
 

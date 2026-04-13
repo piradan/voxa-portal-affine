@@ -9,7 +9,7 @@ declare global {
   };
 }
 
-export const DEFAULT_WORKSPACE_NAME = 'Demo Workspace';
+export const DEFAULT_WORKSPACE_NAME = 'Default Workspace';
 export const UNTITLED_WORKSPACE_NAME = 'Untitled';
 
 export const DEFAULT_SORT_KEY = 'updatedDate';

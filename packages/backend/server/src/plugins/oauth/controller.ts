@@ -57,10 +57,16 @@ export class OAuthController {
     @Body('client') client?: string,
     @Body('client_nonce') clientNonce?: string
   ) {
+    this.logger.log(
+      `OAuth preflight: provider=${unknownProviderName ?? '(none)'} client=${client ?? '(none)'} origin=${req.headers['origin'] ?? req.headers['host'] ?? 'unknown'}`
+    );
+
     if (!unknownProviderName) {
+      this.logger.warn('OAuth preflight: missing provider parameter');
       throw new MissingOauthQueryParameter({ name: 'provider' });
     }
     if (!clientNonce) {
+      this.logger.warn(`OAuth preflight: missing client_nonce for provider=${unknownProviderName}`);
       throw new MissingOauthQueryParameter({ name: 'client_nonce' });
     }
 
@@ -68,12 +74,16 @@ export class OAuthController {
     const provider = this.providerFactory.get(providerName);
 
     if (!provider) {
+      this.logger.error(
+        `OAuth preflight: unknown provider "${unknownProviderName}" — registered providers: [${this.providerFactory.providers.join(', ')}]`
+      );
       throw new UnknownOauthProvider({ name: unknownProviderName });
     }
 
     const pkce = provider.requiresPkce ? this.oauth.createPkcePair() : null;
 
     if (redirectUri && !this.url.isAllowedRedirectUri(redirectUri)) {
+      this.logger.warn(`OAuth preflight: redirect_uri "${redirectUri}" not in allowlist`);
       throw new ActionForbidden();
     }
 

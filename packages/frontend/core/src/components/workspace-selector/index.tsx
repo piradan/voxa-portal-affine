@@ -1,5 +1,6 @@
 import { Menu, type MenuProps } from '@affine/component';
 import { useNavigateHelper } from '@affine/core/components/hooks/use-navigate-helper';
+import { UserFeatureService } from '@affine/core/modules/cloud';
 import { GlobalContextService } from '@affine/core/modules/global-context';
 import { WorkbenchService } from '@affine/core/modules/workbench';
 import {
@@ -54,6 +55,8 @@ export const WorkspaceSelector = ({
     GlobalContextService,
     WorkspacesService,
   });
+  const userFeatureService = useServiceOptional(UserFeatureService);
+  const isAdmin = useLiveData(userFeatureService?.userFeature.isAdmin$ ?? null);
   const [innerOpen, setOpened] = useState(false);
   const open = outerOpen ?? innerOpen;
   const onOpenChange = useCallback(
@@ -96,6 +99,27 @@ export const WorkspaceSelector = ({
       workspacesService.list.revalidate();
     }
   }, [workspacesService, open]);
+
+  // Non-admins: show workspace name as a plain non-interactive display.
+  // Only admins can switch workspaces or access workspace settings.
+  if (!isAdmin) {
+    return workspaceMetadata ? (
+      <WorkspaceCard
+        workspaceMetadata={workspaceMetadata}
+        showSyncStatus={false}
+        className={className}
+        showArrowDownIcon={false}
+        disable={true}
+        hideCollaborationIcon={true}
+        hideTeamWorkspaceIcon={true}
+        data-testid="current-workspace-card"
+        dense={dense}
+        style={{ cursor: 'default', pointerEvents: 'none' }}
+      />
+    ) : (
+      <span></span>
+    );
+  }
 
   return (
     <Menu

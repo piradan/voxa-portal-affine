@@ -32,6 +32,7 @@ const httpProxyMiddlewareLogLevel = IN_CI ? 'silent' : 'error';
 
 export const DEFAULT_DEV_SERVER_CONFIG: RspackDevServerConfiguration = {
   host: '0.0.0.0',
+  port: 8084,
   allowedHosts: 'all',
   hot: false,
   liveReload: true,
@@ -40,10 +41,11 @@ export const DEFAULT_DEV_SERVER_CONFIG: RspackDevServerConfiguration = {
   client: {
     overlay: process.env.DISABLE_DEV_OVERLAY === 'true' ? false : undefined,
     logging: process.env.CI ? 'none' : 'error',
-    // see: https://webpack.js.org/configuration/dev-server/#websocketurl
-    // must be an explicit ws/wss URL because custom protocols (e.g. assets://)
-    // cannot be used to construct WebSocket endpoints in Electron
-    webSocketURL: 'ws://0.0.0.0:8080/ws',
+    // 'auto' makes the HMR client inherit protocol/host/port from the page URL.
+    // This is required when accessed through a reverse proxy (Traefik) — the
+    // explicit ws://host:8084 form bypasses the proxy and fails from outside.
+    // Electron cannot use custom protocols for WebSocket, but we're self-hosted.
+    webSocketURL: 'auto://0.0.0.0:0/ws',
   },
   historyApiFallback: {
     rewrites: [

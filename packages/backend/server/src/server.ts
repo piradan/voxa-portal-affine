@@ -36,6 +36,14 @@ export async function run() {
   app.useBodyParser('raw', { limit: 100 * OneMB });
 
   const logger = app.get(AFFiNELogger);
+  // Allow dynamic log level control via NEST_LOG_LEVELS env var.
+  // In dev: set NEST_LOG_LEVELS=log,warn,error,debug,verbose for full visibility.
+  if (process.env.NEST_LOG_LEVELS) {
+    const levels = process.env.NEST_LOG_LEVELS.split(',').map(l =>
+      l.trim()
+    ) as import('@nestjs/common').LogLevel[];
+    logger.setLogLevels(levels);
+  }
   app.useLogger(logger);
   const config = app.get(Config);
   const url = app.get(URLHelper);

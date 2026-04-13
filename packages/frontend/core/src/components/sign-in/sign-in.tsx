@@ -10,7 +10,7 @@ import { OAuth } from '@affine/core/components/affine/auth/oauth';
 import { useAsyncCallback } from '@affine/core/components/hooks/affine-async-hooks';
 import { AuthService, ServerService } from '@affine/core/modules/cloud';
 import type { AuthSessionStatus } from '@affine/core/modules/cloud/entities/session';
-import { ServerDeploymentType } from '@affine/graphql';
+import { OAuthProviderType, ServerDeploymentType } from '@affine/graphql';
 import { Trans, useI18n } from '@affine/i18n';
 import {
   ArrowRightBigIcon,
@@ -69,6 +69,24 @@ export const SignInStep = ({
   const [isValidEmail, setIsValidEmail] = useState(true);
 
   const loginStatus = useLiveData(authService.session.status$);
+
+  // Voxa Portal always uses Zitadel OIDC — skip the AFFiNE login form entirely
+  // and redirect straight to Zitadel on mount. Only show the form if there's
+  // an error coming back from the OAuth callback (to avoid a redirect loop).
+  useEffect(() => {
+    const hasError = new URLSearchParams(window.location.search).has('error');
+    if (!hasError) {
+      const params = new URLSearchParams({
+        provider: OAuthProviderType.OIDC,
+        flow: 'redirect',
+      });
+      if (state.redirectUrl) {
+        params.set('redirect_uri', state.redirectUrl);
+      }
+      window.location.href = `/oauth/login?${params.toString()}`;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (loginStatus === 'authenticated') {
