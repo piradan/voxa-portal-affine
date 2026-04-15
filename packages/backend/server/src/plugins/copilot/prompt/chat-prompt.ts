@@ -142,6 +142,8 @@ export class ChatPrompt {
       'affine::hasSelected': !!selectedMarkdown || !!selectedSnapshot || !!html,
       'affine::hasCurrentDoc':
         typeof currentDocId === 'string' && currentDocId.trim().length > 0,
+      'voxa::internal_workspace_id':
+        process.env['VOXA_INTERNAL_WORKSPACE_ID'] || 'not-configured',
     };
   }
 

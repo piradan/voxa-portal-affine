@@ -34,3 +34,6 @@ export { VoxaFlashcardsWidget } from "./flashcards/flashcards-widget";
 export { VoxaAnalyticsWidget } from "./analytics/analytics-widget";
 export { VoxaAdamWidget } from "./adam/adam-widget";
 export { VoxaEveWidget } from "./eve/eve-widget";
+export { VoxaBookWidget } from "./book/voxa-book-widget";
+export { VoxaBacklogWidget } from "./backlog/backlog-widget";
+export { VoxaAdrWidget } from "./adr/adr-widget";

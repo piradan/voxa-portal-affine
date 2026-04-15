@@ -6,4 +6,5 @@ export * from './linked-doc/index';
 export * from './loom/index';
 export * from './synced-doc/index';
 export * from './types';
+export * from './voxa-book/index';
 export * from './youtube/index';

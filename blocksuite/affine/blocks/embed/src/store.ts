@@ -11,6 +11,7 @@ import {
   EmbedLoomBlockSchemaExtension,
   EmbedSyncedDocBlockSchemaExtension,
   EmbedYoutubeBlockSchemaExtension,
+  VoxaBookBlockSchemaExtension,
 } from '@blocksuite/affine-model';
 import { EmbedIframeService } from '@blocksuite/affine-shared/services';
 
@@ -35,6 +36,7 @@ export class EmbedStoreExtension extends StoreExtensionProvider {
       EmbedFigmaBlockSchemaExtension,
       EmbedLoomBlockSchemaExtension,
       EmbedYoutubeBlockSchemaExtension,
+      VoxaBookBlockSchemaExtension,
     ]);
     context.register(EmbedFigmaBlockAdapterExtensions);
     context.register(EmbedGithubBlockAdapterExtensions);

@@ -79,6 +79,12 @@ interface RenameWorkspaceBody {
   name: string;
 }
 
+interface WorkspaceNoteBody {
+  workspaceId: string;
+  title: string;
+  markdown: string;
+}
+
 @Controller('/api/voxa')
 export class VoxaProvisionController {
   private readonly logger = new Logger(VoxaProvisionController.name);
@@ -293,6 +299,111 @@ export class VoxaProvisionController {
    * Used to backfill workspaces provisioned before this fix, or to rename
    * a workspace name after a tenant renames their organisation.
    */
+  /**
+   * POST /api/voxa/provision-internal
+   * One-time setup — creates the Voxa Platform Intelligence internal workspace,
+   * used for staff backlog, ADRs, and project intelligence. Idempotent: if a
+   * workspace with voxaWorkspaceType='internal' already exists, returns it.
+   *
+   * Auth: AFFINE_SERVICE_TOKEN.
+   */
+  @Public()
+  @Post('/provision-internal')
+  @HttpCode(200)
+  async provisionInternal(@Req() req: Request, @Res() res: Response) {
+    if (!this.validateServiceToken(req, res)) return;
+
+    try {
+      const existing = await this.models.workspace.list(
+        { voxaWorkspaceType: 'internal' } as any,
+        { id: true, sid: true } as any,
+        1
+      );
+      if (existing && existing.length > 0) {
+        const ws = existing[0] as unknown as { id: string };
+        this.logger.log(`Internal workspace already exists: ${ws.id}`);
+        res.json({ workspaceId: ws.id, created: false });
+        return;
+      }
+    } catch (err) {
+      this.logger.warn(
+        `provision-internal lookup failed, continuing to create: ${(err as Error).message}`
+      );
+    }
+
+    const adminUser = await this.models.user.getUserByEmail(
+      'admin@voxa.education'
+    );
+    if (!adminUser) {
+      this.logger.error('Portal admin user not found — run first-run setup');
+      res.status(500).json({ error: 'admin_user_not_found' });
+      return;
+    }
+
+    const workspace = await this.models.workspace.create(adminUser.id);
+    const workspaceName = 'Voxa Platform Intelligence';
+
+    await this.models.workspace.update(
+      workspace.id,
+      {
+        name: workspaceName,
+        voxaTenantId: 'voxa-internal',
+        voxaWorkspaceType: 'internal',
+      } as any,
+      false
+    );
+
+    try {
+      await this.setWorkspaceYjsName(workspace.id, workspaceName);
+    } catch (err) {
+      this.logger.warn(`Failed to set Yjs workspace name: ${(err as Error).message}`);
+    }
+
+    this.logger.log(
+      `Provisioned internal workspace ${workspace.id} (${workspaceName})`
+    );
+    res.json({ workspaceId: workspace.id, created: true });
+  }
+
+  /**
+   * POST /api/voxa/workspace-note
+   * Creates a new document in the given workspace with the supplied markdown.
+   * Used by voxa:adr and similar intelligence widgets to seed new docs.
+   */
+  @Public()
+  @Post('/workspace-note')
+  @HttpCode(200)
+  async workspaceNote(
+    @Body() body: WorkspaceNoteBody,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    if (!this.validateServiceToken(req, res)) return;
+
+    const { workspaceId, title, markdown } = body ?? {};
+    if (!workspaceId || !title || !markdown) {
+      res.status(400).json({ error: 'missing_fields' });
+      return;
+    }
+
+    try {
+      const { docId } = await this.docWriter.createDoc(
+        workspaceId,
+        title,
+        markdown
+      );
+      this.logger.log(
+        `Created workspace note "${title}" as doc ${docId} in workspace ${workspaceId}`
+      );
+      res.json({ docId });
+    } catch (err) {
+      this.logger.error(`Failed to create workspace note: ${(err as Error).message}`);
+      res
+        .status(500)
+        .json({ error: 'note_create_failed', detail: (err as Error).message });
+    }
+  }
+
   @Public()
   @Post('/rename-workspace')
   @HttpCode(200)

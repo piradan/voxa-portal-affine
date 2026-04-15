@@ -11,6 +11,7 @@ export * from './common/render-linked-doc';
 export { toEdgelessEmbedBlock } from './common/to-edgeless-embed-block';
 export * from './common/utils';
 export * from './embed-figma-block';
+export * from './embed-voxa-book-block';
 export * from './embed-github-block';
 export * from './embed-html-block';
 export * from './embed-iframe-block';

@@ -520,7 +520,7 @@ export class ChatSessionService {
         const wsType = (ws as unknown as Record<string, string>)?.voxaWorkspaceType;
         if (wsType === 'student') {
           effectivePromptName = 'voxa-adam';
-        } else if (wsType === 'staff') {
+        } else if (wsType === 'staff' || wsType === 'internal') {
           effectivePromptName = 'voxa-eve';
         }
       } catch {

@@ -4,6 +4,7 @@ import {
 } from '@blocksuite/affine-ext-loader';
 
 import { effects } from './effects';
+import { EmbedVoxaBookViewExtensions } from './embed-voxa-book-block';
 import {
   EdgelessClipboardEmbedFigmaConfig,
   EmbedFigmaViewExtensions,
@@ -51,6 +52,7 @@ export class EmbedViewExtension extends ViewExtensionProvider {
     context.register(EmbedYoutubeViewExtensions);
     context.register(EmbedHtmlViewExtensions);
     context.register(EmbedIframeViewExtensions);
+    context.register(EmbedVoxaBookViewExtensions);
     const isEdgeless = this.isEdgeless(context.scope);
     if (isEdgeless) {
       context.register([

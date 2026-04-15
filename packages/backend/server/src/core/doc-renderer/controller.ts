@@ -203,10 +203,10 @@ export class DocRendererController {
     }
 
     const title = opts?.title
-      ? htmlSanitize(`${opts.title} | AFFiNE`)
-      : 'AFFiNE';
+      ? htmlSanitize(`${opts.title} | Voxa Portal`)
+      : 'Voxa Portal';
     const summary = opts ? htmlSanitize(opts.summary) : assets.description;
-    const image = opts?.avatar ?? 'https://affine.pro/og.jpeg';
+    const image = opts?.avatar ?? '/og.png';
 
     // TODO(@forehalo): parse assets/index.html
     return `<!DOCTYPE html>
@@ -240,7 +240,7 @@ export class DocRendererController {
       content="${title}"
     />
     <meta name="twitter:description" content="${summary}" />
-    <meta name="twitter:site" content="@AffineOfficial" />
+    <meta name="twitter:site" content="@VoxaEducation" />
     <meta name="twitter:image" content="${image}" />
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${summary}" />

@@ -33,9 +33,16 @@ interface VoxaSsoPayload {
   name?: string;
   tenantId: string;
   roles: string[];
-  voxaWorkspaceType: 'staff' | 'student';
+  voxaWorkspaceType: 'staff' | 'student' | 'internal';
   workspaceId: string;
   aud: string | string[];
+}
+
+const PLATFORM_ADMIN_ROLES = new Set(['platform_admin', 'super_admin']);
+
+function isPlatformAdmin(roles: string[] | undefined): boolean {
+  if (!roles || roles.length === 0) return false;
+  return roles.some(r => PLATFORM_ADMIN_ROLES.has(r));
 }
 
 @Controller('/api/voxa-sso')
@@ -102,6 +109,20 @@ export class VoxaSsoController {
     } catch (err) {
       this.logger.error(`Failed to set portal session cookies: ${err}`);
       res.status(500).json({ error: 'session_failed' });
+      return;
+    }
+
+    // Gate the internal workspace: only platform_admin / super_admin roles may
+    // enter. Staff / teachers / students should never be redirected there.
+    const internalWorkspaceId = process.env['VOXA_INTERNAL_WORKSPACE_ID'];
+    const targetingInternal =
+      payload.voxaWorkspaceType === 'internal' ||
+      (internalWorkspaceId && payload.workspaceId === internalWorkspaceId);
+    if (targetingInternal && !isPlatformAdmin(payload.roles)) {
+      this.logger.warn(
+        `Voxa SSO: user ${payload.email} denied internal workspace access (roles: ${JSON.stringify(payload.roles)})`
+      );
+      res.status(403).json({ error: 'forbidden_internal_workspace' });
       return;
     }
 
